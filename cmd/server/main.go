@@ -28,6 +28,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		handler.JSONOK(w, map[string]string{"status": "ok"})
+	})
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		handler.JSONOK(w, map[string]string{"message": "ok"})
 	})
