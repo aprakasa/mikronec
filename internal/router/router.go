@@ -250,6 +250,30 @@ func (m *Manager) RemoveSSEClient(routerID string, client *types.SSEClient) {
 	m.mu.Unlock()
 }
 
+func (m *Manager) CloseAll() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for routerID, stop := range m.pollerStop {
+		close(stop)
+		delete(m.pollerStop, routerID)
+	}
+
+	for routerID, set := range m.sseHUB {
+		for c := range set {
+			c.Close()
+		}
+		delete(m.sseHUB, routerID)
+	}
+
+	for key, sw := range m.sessions {
+		_ = sw.Conn.Close()
+		delete(m.sessions, key)
+	}
+
+	log.Println("All sessions, pollers, and SSE clients closed")
+}
+
 func (m *Manager) IsRouterConnected(routerID string) bool {
 	m.mu.RLock()
 	_, connected := m.routerMap[routerID]

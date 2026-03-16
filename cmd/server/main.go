@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/aprakasa/mikronek/internal/handler"
 	"github.com/aprakasa/mikronek/internal/middleware"
@@ -55,5 +59,22 @@ func main() {
 	h = middleware.CORSMiddleware(cfg.AllowedOrigins)(h)
 
 	log.Println("MikroHot Connector running at :" + port)
-	log.Fatal(http.ListenAndServe(":"+port, h))
+
+	srv := &http.Server{Addr: ":" + port, Handler: h}
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigCh
+	log.Printf("Received %v, shutting down gracefully...", sig)
+
+	shutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	go rm.CloseAll()
+
+	if err := srv.Shutdown(shutCtx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
+	}
+
+	log.Println("Server stopped")
 }
