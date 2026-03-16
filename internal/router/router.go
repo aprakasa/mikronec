@@ -195,6 +195,9 @@ func (m *Manager) poll(routerID string) {
 	}
 	b, _ := json.Marshal(data)
 
+	id := fmt.Sprintf("%d", time.Now().UnixMilli())
+	evt := types.SSEEvent{ID: id, Event: "poll", Data: b}
+
 	m.mu.RLock()
 	clients := make([]*types.SSEClient, 0, len(m.sseHUB[routerID]))
 	for c := range m.sseHUB[routerID] {
@@ -204,7 +207,7 @@ func (m *Manager) poll(routerID string) {
 
 	for _, c := range clients {
 		select {
-		case c.Ch <- b:
+		case c.Ch <- evt:
 		default:
 		}
 	}

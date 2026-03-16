@@ -14,8 +14,14 @@ type SessionWrap struct {
 	Password string
 }
 
+type SSEEvent struct {
+	ID    string
+	Event string
+	Data  []byte
+}
+
 type SSEClient struct {
-	Ch   chan []byte
+	Ch   chan SSEEvent
 	once sync.Once
 }
 
