@@ -54,7 +54,7 @@ func HandleConnect(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 
 	rm.AddRouter(body.RouterID, key)
 
-	if err := rm.ConnectRouter(key, body.Host, body.Username, body.Password); err != nil {
+	if err := rm.ConnectRouter(r.Context(), key, body.Host, body.Username, body.Password); err != nil {
 		JSONErr(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -103,7 +103,7 @@ func HandleSystemInfo(w http.ResponseWriter, r *http.Request, rm *router.Manager
 		return
 	}
 
-	sw, err := rm.GetConn(router)
+	sw, err := rm.GetConn(r.Context(), router)
 	if err != nil {
 		JSONErr(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -143,7 +143,7 @@ func HandleRun(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 		return
 	}
 
-	sw, err := rm.GetConn(body.RouterID)
+	sw, err := rm.GetConn(r.Context(), body.RouterID)
 	if err != nil {
 		JSONErr(w, err.Error(), http.StatusInternalServerError)
 		return

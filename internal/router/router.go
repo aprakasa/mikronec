@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -63,7 +64,7 @@ func (m *Manager) IsKeyUsed(key string) bool {
 	return false
 }
 
-func (m *Manager) ConnectRouter(key, host, user, pass string) error {
+func (m *Manager) ConnectRouter(ctx context.Context, key, host, user, pass string) error {
 	m.mu.RLock()
 	sw, exists := m.sessions[key]
 	m.mu.RUnlock()
@@ -77,7 +78,7 @@ func (m *Manager) ConnectRouter(key, host, user, pass string) error {
 		}
 	}
 
-	conn, err := routeros.Dial(normalize.EnsureAPIAddr(host), user, pass)
+	conn, err := routeros.DialContext(ctx, normalize.EnsureAPIAddr(host), user, pass)
 	if err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func (m *Manager) ConnectRouter(key, host, user, pass string) error {
 	return nil
 }
 
-func (m *Manager) GetConn(routerID string) (*types.SessionWrap, error) {
+func (m *Manager) GetConn(ctx context.Context, routerID string) (*types.SessionWrap, error) {
 	m.mu.RLock()
 	key, ok := m.routerMap[routerID]
 	m.mu.RUnlock()
@@ -109,13 +110,13 @@ func (m *Manager) GetConn(routerID string) (*types.SessionWrap, error) {
 	_, err := sw.Conn.Run("/ping", "=count=1")
 	sw.Mu.Unlock()
 	if err != nil {
-		return nil, m.reconnect(key, sw.Host, sw.Username, sw.Password)
+		return nil, m.reconnect(ctx, key, sw.Host, sw.Username, sw.Password)
 	}
 	return sw, nil
 }
 
-func (m *Manager) reconnect(key, host, user, pass string) error {
-	conn, err := routeros.Dial(normalize.EnsureAPIAddr(host), user, pass)
+func (m *Manager) reconnect(ctx context.Context, key, host, user, pass string) error {
+	conn, err := routeros.DialContext(ctx, normalize.EnsureAPIAddr(host), user, pass)
 	if err != nil {
 		return err
 	}
@@ -170,7 +171,10 @@ func (m *Manager) pollingLoop(routerID string, stop chan struct{}) {
 }
 
 func (m *Manager) poll(routerID string) {
-	sw, err := m.GetConn(routerID)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	sw, err := m.GetConn(ctx, routerID)
 	if err != nil {
 		log.Printf("Poller for %s: connection error, retrying... (%v)", routerID, err)
 		return
