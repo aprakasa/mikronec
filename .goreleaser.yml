@@ -23,6 +23,7 @@ dockers:
   - image_templates:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Tag }}"
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest"
+    dockerfile: Dockerfile.release
     goos: linux
     goarch: amd64
     use: buildx
