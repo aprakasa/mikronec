@@ -1,0 +1,271 @@
+basePath: /
+definitions:
+  github_com_aprakasa_mikronek_internal_types.ConnectRequest:
+    properties:
+      host:
+        type: string
+      password:
+        type: string
+      router_id:
+        type: string
+      username:
+        type: string
+    type: object
+  github_com_aprakasa_mikronek_internal_types.DisconnectRequest:
+    properties:
+      router_id:
+        type: string
+    type: object
+  github_com_aprakasa_mikronek_internal_types.JSONResponse:
+    properties:
+      data: {}
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  github_com_aprakasa_mikronek_internal_types.RunRequest:
+    properties:
+      args:
+        items:
+          type: string
+        type: array
+      router_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: aprakasa@example.com
+    name: API Support
+  description: A high-performance Go backend for managing and monitoring MikroTik
+    routers.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Mikronec API
+  version: "1.0"
+paths:
+  /connect:
+    post:
+      consumes:
+      - application/json
+      description: Establish a connection to a MikroTik router. Connections are pooled
+        and can be reused.
+      parameters:
+      - description: API Key for authentication
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      - description: Connection details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.ConnectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Connected successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "500":
+          description: Connection failed
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+      summary: Connect to a MikroTik router
+      tags:
+      - connection
+  /disconnect:
+    post:
+      consumes:
+      - application/json
+      description: Close the connection to a MikroTik router. Stops polling and SSE
+        streams.
+      parameters:
+      - description: API Key for authentication
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      - description: Disconnect details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.DisconnectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disconnected successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+      summary: Disconnect from a MikroTik router
+      tags:
+      - connection
+  /run:
+    post:
+      consumes:
+      - application/json
+      description: Execute arbitrary RouterOS commands on a connected router. Use
+        with caution.
+      parameters:
+      - description: API Key for authentication
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      - description: Command to execute
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.RunRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Command result
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+            - properties:
+                data:
+                  items:
+                    additionalProperties: true
+                    type: object
+                  type: array
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "500":
+          description: Command execution failed
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+      summary: Execute a RouterOS command
+      tags:
+      - commands
+  /sse/{routerID}:
+    get:
+      description: Stream real-time router data (hardware stats, hotspot users, PPP
+        sessions) via Server-Sent Events.
+      parameters:
+      - description: API Key for authentication
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      - description: Router ID to subscribe to
+        in: path
+        name: routerID
+        required: true
+        type: string
+      - description: Last event ID for reconnection
+        in: header
+        name: Last-Event-ID
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE stream started
+        "400":
+          description: Missing router or router not connected
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+      summary: Subscribe to router SSE stream
+      tags:
+      - streaming
+  /system-info:
+    get:
+      description: Retrieve identity, version, architecture, model, and serial number
+        from the router.
+      parameters:
+      - description: API Key for authentication
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      - description: Router ID to query
+        in: query
+        name: router
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System information
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Missing router parameter
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+        "500":
+          description: Connection error
+          schema:
+            $ref: '#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse'
+      summary: Get router system information
+      tags:
+      - system
+securityDefinitions:
+  ApiKeyAuth:
+    description: API Key for authentication
+    in: header
+    name: X-API-Key
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,415 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A high-performance Go backend for managing and monitoring MikroTik routers.",
+        "title": "Mikronec API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "aprakasa@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/connect": {
+            "post": {
+                "description": "Establish a connection to a MikroTik router. Connections are pooled and can be reused.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "connection"
+                ],
+                "summary": "Connect to a MikroTik router",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key for authentication",
+                        "name": "X-API-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Connection details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.ConnectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connected successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Connection failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/disconnect": {
+            "post": {
+                "description": "Close the connection to a MikroTik router. Stops polling and SSE streams.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "connection"
+                ],
+                "summary": "Disconnect from a MikroTik router",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key for authentication",
+                        "name": "X-API-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Disconnect details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.DisconnectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Disconnected successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/run": {
+            "post": {
+                "description": "Execute arbitrary RouterOS commands on a connected router. Use with caution.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "commands"
+                ],
+                "summary": "Execute a RouterOS command",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key for authentication",
+                        "name": "X-API-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Command to execute",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.RunRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Command result",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": true
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Command execution failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sse/{routerID}": {
+            "get": {
+                "description": "Stream real-time router data (hardware stats, hotspot users, PPP sessions) via Server-Sent Events.",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "streaming"
+                ],
+                "summary": "Subscribe to router SSE stream",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key for authentication",
+                        "name": "X-API-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Router ID to subscribe to",
+                        "name": "routerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Last event ID for reconnection",
+                        "name": "Last-Event-ID",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE stream started"
+                    },
+                    "400": {
+                        "description": "Missing router or router not connected",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/system-info": {
+            "get": {
+                "description": "Retrieve identity, version, architecture, model, and serial number from the router.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Get router system information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "API Key for authentication",
+                        "name": "X-API-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Router ID to query",
+                        "name": "router",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "System information",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Missing router parameter",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Connection error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_aprakasa_mikronek_internal_types.JSONResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_aprakasa_mikronek_internal_types.ConnectRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "router_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_aprakasa_mikronek_internal_types.DisconnectRequest": {
+            "type": "object",
+            "properties": {
+                "router_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_aprakasa_mikronek_internal_types.JSONResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_aprakasa_mikronek_internal_types.RunRequest": {
+            "type": "object",
+            "properties": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "router_id": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API Key for authentication",
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header"
+        }
+    }
+}

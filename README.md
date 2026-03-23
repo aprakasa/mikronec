@@ -2,12 +2,15 @@
 
 [![Release](https://img.shields.io/github/v/release/aprakasa/mikronec?include_prereleases)](https://github.com/aprakasa/mikronec/releases)
 [![Docker](https://img.shields.io/badge/ghcr.io-aprakasa%2Fmikronec-blue)](https://github.com/aprakasa/mikronec/pkgs/container/mikronec)
+[![Go Reference](https://pkg.go.dev/badge/github.com/aprakasa/mikronec.svg)](https://pkg.go.dev/github.com/aprakasa/mikronec)
 [![Go Report Card](https://goreportcard.com/badge/github.com/aprakasa/mikronec)](https://goreportcard.com/report/github.com/aprakasa/mikronec)
 [![License](https://img.shields.io/github/license/aprakasa/mikronec)](LICENSE)
 
 Mikronec (Mikrotik Connector) adalah server backend Go berperforma tinggi yang berfungsi sebagai bridge (jembatan) untuk mengelola dan memantau beberapa router MikroTik melalui satu API yang aman.
 
 Aplikasi ini menggunakan connection multiplexing untuk menggunakan kembali koneksi yang ada dan menyediakan endpoint Server-Sent Events (SSE) untuk pemantauan data real-time (seperti status hardware dan pengguna aktif).
+
+**Swagger UI**: `http://localhost:8080/swagger/index.html`
 
 ## Fitur
 
@@ -191,3 +194,13 @@ data: {"router_id":"cabang-jakarta-01","hardware":[...],"hotspot_active":[],"ppp
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## Development
+
+```bash
+make swag       # Generate swagger docs
+make swag-fmt   # Format swagger annotations
+make build      # Build binary
+make test       # Run tests
+make run        # Run server locally
+```

@@ -1,3 +1,5 @@
+// Package normalize provides utilities for transforming RouterOS protocol responses
+// into more usable Go data structures with proper type conversions.
 package normalize
 
 import (
@@ -7,6 +9,9 @@ import (
 	"github.com/go-routeros/routeros/v3/proto"
 )
 
+// Normalize converts RouterOS protocol sentences into a slice of maps
+// with type-appropriate conversions. It renames ".id" to "id" and converts
+// numeric fields (cpu-load, rx-bps, etc.) and uptime to proper numeric types.
 func Normalize(re []*proto.Sentence) []map[string]any {
 	out := make([]map[string]any, 0, len(re))
 	for _, row := range re {
@@ -33,6 +38,9 @@ func Normalize(re []*proto.Sentence) []map[string]any {
 	return out
 }
 
+// UptimeToSeconds converts RouterOS uptime strings to seconds.
+// Supports formats like "1w2d3h4m5s", "2d12:30:45", or "12:30:45".
+// Returns the total duration in seconds.
 func UptimeToSeconds(s string) int64 {
 	if strings.Contains(s, ":") {
 		var days int64
@@ -78,6 +86,8 @@ func UptimeToSeconds(s string) int64 {
 	return duration
 }
 
+// EnsureAPIAddr ensures the host string includes the RouterOS API port.
+// If no port is specified, it appends the default port ":8728".
 func EnsureAPIAddr(host string) string {
 	if strings.Contains(host, ":") {
 		return host

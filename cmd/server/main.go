@@ -1,3 +1,24 @@
+// Package main is the entry point for the Mikronec server.
+// Mikronec is a high-performance Go backend server that acts as a bridge
+// to manage and monitor multiple MikroTik routers through a single secure API.
+//
+// @title Mikronec API
+// @version 1.0
+// @description A high-performance Go backend for managing and monitoring MikroTik routers.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email aprakasa@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-Key
+// @description API Key for authentication
 package main
 
 import (
@@ -9,9 +30,11 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/aprakasa/mikronek/docs"
 	"github.com/aprakasa/mikronek/internal/handler"
 	"github.com/aprakasa/mikronek/internal/middleware"
 	"github.com/aprakasa/mikronek/internal/router"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -32,6 +55,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
+
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		handler.JSONOK(w, map[string]string{"status": "ok"})
 	})

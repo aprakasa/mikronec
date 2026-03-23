@@ -1,3 +1,5 @@
+// Package handler provides HTTP handlers for the Mikronec API endpoints.
+// It includes handlers for connecting, disconnecting, system info, and command execution.
 package handler
 
 import (
@@ -11,6 +13,8 @@ import (
 	"github.com/go-routeros/routeros/v3"
 )
 
+// JSONErr logs an internal error message and writes a JSON error response.
+// The public error message is sanitized based on the HTTP status code.
 func JSONErr(w http.ResponseWriter, internalMsg string, code int) {
 	log.Printf("Internal error (code %d): %s", code, internalMsg)
 
@@ -31,11 +35,29 @@ func JSONErr(w http.ResponseWriter, internalMsg string, code int) {
 	_ = json.NewEncoder(w).Encode(types.JSONResponse{Success: false, Error: publicMsg})
 }
 
+// JSONOK writes a successful JSON response with the provided data.
 func JSONOK(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(types.JSONResponse{Success: true, Data: data})
 }
 
+// HandleConnect handles POST /connect requests to establish a connection to a router.
+// It accepts router_id, host, username, and password in the request body.
+// The connection is pooled and can be shared across multiple router_ids with the same credentials.
+// It also starts the polling loop for real-time data.
+//
+// @Summary Connect to a MikroTik router
+// @Description Establish a connection to a MikroTik router. Connections are pooled and can be reused.
+// @Tags connection
+// @Accept json
+// @Produce json
+// @Param X-API-Key header string true "API Key for authentication"
+// @Param request body types.ConnectRequest true "Connection details"
+// @Success 200 {object} types.JSONResponse{data=map[string]interface{}} "Connected successfully"
+// @Failure 400 {object} types.JSONResponse "Invalid request"
+// @Failure 401 {object} types.JSONResponse "Unauthorized"
+// @Failure 500 {object} types.JSONResponse "Connection failed"
+// @Router /connect [post]
 func HandleConnect(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	var body types.ConnectRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -69,6 +91,21 @@ func HandleConnect(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	})
 }
 
+// HandleDisconnect handles POST /disconnect requests to close a router connection.
+// It stops polling, closes SSE clients, and optionally closes the underlying session
+// if no other routers are using it.
+//
+// @Summary Disconnect from a MikroTik router
+// @Description Close the connection to a MikroTik router. Stops polling and SSE streams.
+// @Tags connection
+// @Accept json
+// @Produce json
+// @Param X-API-Key header string true "API Key for authentication"
+// @Param request body types.DisconnectRequest true "Disconnect details"
+// @Success 200 {object} types.JSONResponse{data=map[string]interface{}} "Disconnected successfully"
+// @Failure 400 {object} types.JSONResponse "Invalid request"
+// @Failure 401 {object} types.JSONResponse "Unauthorized"
+// @Router /disconnect [post]
 func HandleDisconnect(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	var body types.DisconnectRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -96,6 +133,20 @@ func HandleDisconnect(w http.ResponseWriter, r *http.Request, rm *router.Manager
 	JSONOK(w, map[string]interface{}{"router_id": body.RouterID, "disconnected": true, "router_closed": !stillUsed})
 }
 
+// HandleSystemInfo handles GET /system-info requests to retrieve router identity
+// and hardware information. Requires the "router" query parameter.
+//
+// @Summary Get router system information
+// @Description Retrieve identity, version, architecture, model, and serial number from the router.
+// @Tags system
+// @Produce json
+// @Param X-API-Key header string true "API Key for authentication"
+// @Param router query string true "Router ID to query"
+// @Success 200 {object} types.JSONResponse{data=map[string]string} "System information"
+// @Failure 400 {object} types.JSONResponse "Missing router parameter"
+// @Failure 401 {object} types.JSONResponse "Unauthorized"
+// @Failure 500 {object} types.JSONResponse "Connection error"
+// @Router /system-info [get]
 func HandleSystemInfo(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	router := r.URL.Query().Get("router")
 	if router == "" {
@@ -132,6 +183,22 @@ func HandleSystemInfo(w http.ResponseWriter, r *http.Request, rm *router.Manager
 	JSONOK(w, out)
 }
 
+// HandleRun handles POST /run requests to execute arbitrary RouterOS commands.
+// This is a powerful endpoint that should be used with caution.
+// It accepts router_id and args (command and arguments) in the request body.
+//
+// @Summary Execute a RouterOS command
+// @Description Execute arbitrary RouterOS commands on a connected router. Use with caution.
+// @Tags commands
+// @Accept json
+// @Produce json
+// @Param X-API-Key header string true "API Key for authentication"
+// @Param request body types.RunRequest true "Command to execute"
+// @Success 200 {object} types.JSONResponse{data=[]map[string]interface{}} "Command result"
+// @Failure 400 {object} types.JSONResponse "Invalid request"
+// @Failure 401 {object} types.JSONResponse "Unauthorized"
+// @Failure 500 {object} types.JSONResponse "Command execution failed"
+// @Router /run [post]
 func HandleRun(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	var body types.RunRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

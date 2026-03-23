@@ -1,3 +1,5 @@
+// Package handler provides HTTP handlers for the Mikronec API endpoints.
+// This file contains the Server-Sent Events (SSE) handler for real-time streaming.
 package handler
 
 import (
@@ -9,8 +11,26 @@ import (
 	"github.com/aprakasa/mikronek/internal/types"
 )
 
+// sseRetryMs is the retry interval in milliseconds sent to SSE clients
+// for automatic reconnection on connection loss.
 const sseRetryMs = 3000
 
+// HandleSSE handles GET /sse/{routerID} requests for Server-Sent Events streaming.
+// It streams real-time router data including hardware stats, hotspot active users,
+// and PPP active sessions. The connection stays open until the client disconnects.
+// Supports reconnection via Last-Event-ID header.
+//
+// @Summary Subscribe to router SSE stream
+// @Description Stream real-time router data (hardware stats, hotspot users, PPP sessions) via Server-Sent Events.
+// @Tags streaming
+// @Produce text/event-stream
+// @Param X-API-Key header string true "API Key for authentication"
+// @Param routerID path string true "Router ID to subscribe to"
+// @Param Last-Event-ID header string false "Last event ID for reconnection"
+// @Success 200 "SSE stream started"
+// @Failure 400 {object} types.JSONResponse "Missing router or router not connected"
+// @Failure 401 {object} types.JSONResponse "Unauthorized"
+// @Router /sse/{routerID} [get]
 func HandleSSE(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	routerID := r.PathValue("routerID")
 	if routerID == "" {

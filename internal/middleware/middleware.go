@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware for authentication and CORS handling.
 package middleware
 
 import (
@@ -7,11 +8,15 @@ import (
 	"strings"
 )
 
+// Config holds the middleware configuration including API key and allowed CORS origins.
 type Config struct {
 	APIKey         string
 	AllowedOrigins map[string]bool
 }
 
+// AuthMiddleware returns a middleware that validates the X-API-Key header
+// against the configured API key. Requests with invalid or missing keys
+// receive a 401 Unauthorized response.
 func AuthMiddleware(apiKey string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +30,9 @@ func AuthMiddleware(apiKey string) func(http.Handler) http.Handler {
 	}
 }
 
+// CORSMiddleware returns a middleware that handles Cross-Origin Resource Sharing.
+// It sets appropriate CORS headers for requests from allowed origins and
+// handles OPTIONS preflight requests.
 func CORSMiddleware(allowedOrigins map[string]bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +54,9 @@ func CORSMiddleware(allowedOrigins map[string]bool) func(http.Handler) http.Hand
 	}
 }
 
+// LoadEnvConfig loads middleware configuration from environment variables.
+// It reads API_KEY (required) and ALLOWED_ORIGINS (comma-separated, required).
+// Returns an error if any required variable is missing.
 func LoadEnvConfig() (*Config, error) {
 	apiKey := os.Getenv("API_KEY")
 	if apiKey == "" {
