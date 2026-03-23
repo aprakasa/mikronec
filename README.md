@@ -6,75 +6,79 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/aprakasa/mikronec)](https://goreportcard.com/report/github.com/aprakasa/mikronec)
 [![License](https://img.shields.io/github/license/aprakasa/mikronec)](LICENSE)
 
-Mikronec (Mikrotik Connector) adalah server backend Go berperforma tinggi yang berfungsi sebagai bridge (jembatan) untuk mengelola dan memantau beberapa router MikroTik melalui satu API yang aman.
+> 🇬🇧 English | [🇮🇩 Bahasa Indonesia](README_ID.md)
 
-Aplikasi ini menggunakan connection multiplexing untuk menggunakan kembali koneksi yang ada dan menyediakan endpoint Server-Sent Events (SSE) untuk pemantauan data real-time (seperti status hardware dan pengguna aktif).
+Mikronec (Mikrotik Connector) is a high-performance Go backend server that acts as a bridge to manage and monitor multiple MikroTik routers through a single secure API.
+
+This application uses connection multiplexing to reuse existing connections and provides Server-Sent Events (SSE) endpoints for real-time data monitoring (such as hardware status and active users).
 
 **Swagger UI**: `http://localhost:8080/swagger/index.html`
 
-## Fitur
+## Features
 
-- **Manajemen Multi-Router**: Kelola banyak router (router_id) dari satu server.
-- **Connection Multiplexing**: Sesi koneksi (berdasarkan host|user|pass) dibagikan antar router untuk menghemat resource.
-- **Real-time SSE**: Endpoint /sse/{routerID} men-streaming data langsung (CPU, Hotspot Active, PPP Active) ke frontend Anda.
-- **Poller Tangguh**: Poller data otomatis dimulai, berhenti (saat tidak ada klien), dan mencoba menyambung ulang jika koneksi terputus.
-- **Aman**: Semua endpoint dilindungi oleh middleware API Key statis.
+- **Multi-Router Management**: Manage many routers (router_id) from a single server.
+- **Connection Multiplexing**: Connection sessions (based on host|user|pass) are shared across routers to save resources.
+- **Real-time SSE**: `/sse/{routerID}` endpoint streams live data (CPU, Hotspot Active, PPP Active) to your frontend.
+- **Robust Poller**: Data pollers auto-start, stop (when no clients), and reconnect if connection is lost.
+- **Secure**: All endpoints are protected by static API Key middleware.
 
-## Konfigurasi
+## Configuration
 
-Aplikasi ini dikonfigurasi menggunakan environment variable.
+This application is configured using environment variables.
 
-- API_KEY (Wajib): Kunci rahasia (API Key) yang harus - dikirim oleh klien di header X-API-Key untuk otentikasi. Server akan gagal startup jika variabel ini tidak diatur.
+- `MY_API_KEY` (Required): Secret key that must be sent by clients in the `X-API-Key` header for authentication. Server will fail to startup if this variable is not set.
 
-- PORT: Port tempat server akan berjalan. Standarnya adalah 8080 (sesuai untuk Google Cloud Run).
+- `PORT`: Port where the server will run. Default is 8080 (suitable for Google Cloud Run).
 
-## Cara Menjalankan
+## How to Run
 
-1. Lokal (Development)
-   Pastikan Anda memiliki Go (versi 1.21+) terinstal.
+### 1. Local (Development)
+
+Make sure you have Go (version 1.21+) installed.
 
 ```bash
-# Atur variabel lingkungan dan jalankan server
-export MY_API_KEY="kunci-rahasia-anda-yang-sangat-aman"
+# Set environment variables and run server
+export MY_API_KEY="your-super-secret-api-key"
 export PORT="8080"
 
 go run .
 # Output: ✅ MikroHot Connector (Secure) running at :8080
 ```
 
-2. Docker (Production)
-   Lihat `Dockerfile` di bawah. Anda dapat membangun dan menjalankannya dengan perintah berikut:
+### 2. Docker (Production)
+
+See `Dockerfile` below. You can build and run it with the following commands:
 
 ```bash
-# 1. Bangun image Docker
+# 1. Build Docker image
 docker build -t mikronec .
 
-# 2. Jalankan container
+# 2. Run container
 docker run -d -p 8080:8080 \
-  -e MY_API_KEY="kunci-rahasia-anda-yang-sangat-aman" \
+  -e MY_API_KEY="your-super-secret-api-key" \
   -e PORT="8080" \
   --name connector \
   mikronec
 ```
 
-## Penggunaan API
+## API Usage
 
-Semua permintaan API wajib menyertakan header `X-API-Key` dan `ALLOWED_ORIGINS`.
+All API requests must include the `X-API-Key` and `ALLOWED_ORIGINS` headers.
 
 ```bash
-X-API-Key: kunci-rahasia-anda-yang-sangat-aman
+X-API-Key: your-super-secret-api-key
 ALLOWED_ORIGINS: http://localhost:8080
 ```
 
-```bash
-POST /connect
-```
+---
 
-Mendaftarkan `router_id` ke kredensial router tertentu dan memulai koneksi.
+### POST /connect
+
+Registers a `router_id` to specific router credentials and starts the connection.
 
 Body (JSON):
 
-```bash
+```json
 {
   "router_id": "router-01",
   "host": "192.168.88.1:8728",
@@ -83,11 +87,11 @@ Body (JSON):
 }
 ```
 
-Contoh (cURL)
+Example (cURL):
 
 ```bash
 curl -X POST 'http://localhost:8080/connect' \
--H 'X-API-Key: kunci-rahasia-anda-yang-sangat-aman' \
+-H 'X-API-Key: your-super-secret-api-key' \
 -H 'Content-Type: application/json' \
 -d '{
   "router_id": "router-01",
@@ -99,63 +103,59 @@ curl -X POST 'http://localhost:8080/connect' \
 
 ---
 
-```
-POST /disconnect
-```
+### POST /disconnect
 
-Menutup koneksi untuk router_id, menghentikan poller, dan menutup semua klien SSE terkait.
+Closes the connection for a router_id, stops the poller, and closes all related SSE clients.
 
 Body (JSON):
 
-```bash
+```json
 {
   "router_id": "router-01"
 }
 ```
 
+Example (cURL):
+
 ```bash
 curl -X POST 'http://localhost:8080/disconnect' \
--H 'X-API-Key: kunci-rahasia-anda-yang-sangat-aman' \
+-H 'X-API-Key: your-super-secret-api-key' \
 -H 'Content-Type: application/json' \
 -d '{"router_id": "router-01"}'
 ```
 
 ---
 
-```
-GET /system-info
-```
+### GET /system-info
 
-Mengambil informasi sistem dasar dari router yang terkait dengan `router_id`.
+Fetches basic system information from the router associated with the `router_id`.
 
-Query Parameter: router (string, wajib): `router_id` yang ingin Anda cek.
+Query Parameter: `router` (string, required): The `router_id` you want to check.
 
-Contoh (cURL)
+Example (cURL):
 
 ```bash
 curl 'http://localhost:8080/system-info?router=cabang-jakarta-01' \
--H 'X-API-Key: kunci-rahasia-anda-yang-sangat-aman'
+-H 'X-API-Key: your-super-secret-api-key'
 ```
 
 ---
 
-```bash
-POST /run
-```
+### POST /run
 
-Menjalankan perintah arbitrer di router. Ini adalah endpoint yang sangat powerful dan berbahaya jika API Key Anda bocor.
+Executes an arbitrary command on the router. This is a very powerful and dangerous endpoint if your API Key is leaked.
 
 Body (JSON):
 
 - `router_id` (string): Target router.
-- `args` (array of string): Perintah dan argumen yang akan dijalankan.
+- `args` (array of string): Command and arguments to execute.
 
-Contoh (cURL):
+Example (cURL):
 
 ```bash
-# Contoh untuk mengambil daftar IP address
+# Example to fetch list of IP addresses
 curl -X POST 'http://localhost:8080/run' \
--H 'X-API-Key: kunci-rahasia-anda-yang-sangat-aman' \
+-H 'X-API-Key: your-super-secret-api-key' \
 -H 'Content-Type: application/json' \
 -d '{
   "router_id": "cabang-jakarta-01",
@@ -165,23 +165,21 @@ curl -X POST 'http://localhost:8080/run' \
 
 ---
 
-```bash
-GET /sse/{routerID}
-```
+### GET /sse/{routerID}
 
-Membuka koneksi Server-Sent Events (SSE) untuk streaming data real-time.
+Opens a Server-Sent Events (SSE) connection for real-time data streaming.
 
-Path Parameter: routerID (string, wajib): `router_id` yang ingin Anda pantau.
+Path Parameter: `routerID` (string, required): The `router_id` you want to monitor.
 
-Contoh (cURL)
+Example (cURL):
 
 ```bash
-# Opsi -N (no-buffer) diperlukan untuk melihat stream
+# -N (no-buffer) option is required to see the stream
 curl -N 'http://localhost:8080/sse/cabang-jakarta-01' \
--H 'X-API-Key: kunci-rahasia-anda-yang-sangat-aman'
+-H 'X-API-Key: your-super-secret-api-key'
 ```
 
-Contoh Output Stream:
+Example Stream Output:
 
 ```bash
 data: {"router_id":"cabang-jakarta-01","hardware":[...],"hotspot_active":[],"ppp_active":[...],"ts":1678886400}
