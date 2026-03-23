@@ -1,4 +1,17 @@
+version: 2
+
 project_name: mikronec
+
+builds:
+  - main: ./cmd/server
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
 
 archives:
   - format: tar.gz
@@ -19,7 +32,3 @@ dockers:
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
-
-github_urls:
-  # Override if you want to use an enterprise installation
-  # host: github.mycompany.com
