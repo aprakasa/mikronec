@@ -1,6 +1,6 @@
 # Mikronec
 
-Mikronek (Mikrotik Connector) adalah server backend Go berperforma tinggi yang berfungsi sebagai bridge (jembatan) untuk mengelola dan memantau beberapa router MikroTik melalui satu API yang aman.
+Mikronec (Mikrotik Connector) adalah server backend Go berperforma tinggi yang berfungsi sebagai bridge (jembatan) untuk mengelola dan memantau beberapa router MikroTik melalui satu API yang aman.
 
 Aplikasi ini menggunakan connection multiplexing untuk menggunakan kembali koneksi yang ada dan menyediakan endpoint Server-Sent Events (SSE) untuk pemantauan data real-time (seperti status hardware dan pengguna aktif).
 
