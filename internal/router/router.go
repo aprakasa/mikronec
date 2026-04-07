@@ -214,10 +214,15 @@ func (m *Manager) poll(routerID string) {
 	}
 
 	sw.Mu.Lock()
-	hw, _ := sw.Conn.Run("/system/resource/print")
-	hs, _ := sw.Conn.Run("/ip/hotspot/active/print")
-	ppp, _ := sw.Conn.Run("/ppp/active/print")
+	hw, err1 := sw.Conn.Run("/system/resource/print")
+	hs, err2 := sw.Conn.Run("/ip/hotspot/active/print")
+	ppp, err3 := sw.Conn.Run("/ppp/active/print")
 	sw.Mu.Unlock()
+
+	if err1 != nil || err2 != nil || err3 != nil {
+		log.Printf("Poller for %s: command error - resource=%v, hotspot=%v, ppp=%v", routerID, err1, err2, err3)
+		return
+	}
 
 	data := map[string]interface{}{
 		"router_id":      routerID,
@@ -252,6 +257,7 @@ func (m *Manager) StopRouter(routerID string) {
 	m.mu.Lock()
 	if stop, running := m.pollerStop[routerID]; running {
 		close(stop)
+		delete(m.pollerStop, routerID)
 	}
 	if set, ok := m.sseHUB[routerID]; ok {
 		for c := range set {
@@ -283,6 +289,7 @@ func (m *Manager) RemoveSSEClient(routerID string, client *types.SSEClient) {
 	if len(m.sseHUB[routerID]) == 0 {
 		if stop, ok := m.pollerStop[routerID]; ok {
 			close(stop)
+			delete(m.pollerStop, routerID)
 			log.Println("Auto stopped polling (no clients) for:", routerID)
 		}
 	}

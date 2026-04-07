@@ -161,10 +161,16 @@ func HandleSystemInfo(w http.ResponseWriter, r *http.Request, rm *router.Manager
 	}
 
 	sw.Mu.Lock()
-	idn, _ := sw.Conn.Run("/system/identity/print")
-	sys, _ := sw.Conn.Run("/system/resource/print")
-	rb, _ := sw.Conn.Run("/system/routerboard/print")
+	idn, err1 := sw.Conn.Run("/system/identity/print")
+	sys, err2 := sw.Conn.Run("/system/resource/print")
+	rb, err3 := sw.Conn.Run("/system/routerboard/print")
 	sw.Mu.Unlock()
+
+	if err1 != nil || err2 != nil || err3 != nil {
+		log.Printf("System info error for %s: identity=%v, resource=%v, routerboard=%v", router, err1, err2, err3)
+		JSONErr(w, "failed to retrieve system information", http.StatusInternalServerError)
+		return
+	}
 
 	get := func(rep *routeros.Reply, k string) string {
 		if rep == nil || len(rep.Re) == 0 {
