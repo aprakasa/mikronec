@@ -4,6 +4,8 @@
 [![Docker](https://img.shields.io/badge/ghcr.io-aprakasa%2Fmikronec-blue)](https://github.com/aprakasa/mikronec/pkgs/container/mikronec)
 [![Go Reference](https://pkg.go.dev/badge/github.com/aprakasa/mikronec.svg)](https://pkg.go.dev/github.com/aprakasa/mikronec)
 [![Go Report Card](https://goreportcard.com/badge/github.com/aprakasa/mikronec)](https://goreportcard.com/report/github.com/aprakasa/mikronec)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](Makefile)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](Makefile)
 [![License](https://img.shields.io/github/license/aprakasa/mikronec)](LICENSE)
 
 > 🇮🇩 Bahasa Indonesia | [🇬🇧 English](README.md)
@@ -21,6 +23,127 @@ Aplikasi ini menggunakan connection multiplexing untuk menggunakan kembali konek
 - **Real-time SSE**: Endpoint `/sse/{routerID}` men-streaming data langsung (CPU, Hotspot Active, PPP Active) ke frontend Anda.
 - **Poller Tangguh**: Poller data otomatis dimulai, berhenti (saat tidak ada klien), dan mencoba menyambung ulang jika koneksi terputus.
 - **Aman**: Semua endpoint dilindungi oleh middleware API Key statis.
+
+## Arsitektur
+
+### Gambaran Sistem
+
+```mermaid
+flowchart TB
+    subgraph Client["Layer Klien"]
+        Web["Web Frontend"]
+        Mobile["Aplikasi Mobile"]
+        CLI["Tool CLI"]
+    end
+
+    subgraph API["Layer API"]
+        Router["HTTP Router\n(Go 1.26)"]
+        Auth["Autentikasi API Key"]
+        Swagger["Swagger UI\n/docs"]
+    end
+
+    subgraph Core["Layer Core"]
+        Manager["Router Manager"]
+        SessionPool["Session Pool\n(host|user|pass)"]
+        Poller["Auto Poller\n(interval 2 detik)"]
+        SSEHub["SSE Hub"]
+    end
+
+    subgraph Devices["Perangkat MikroTik"]
+        MT1["Router 1\n192.168.1.1"]
+        MT2["Router 2\n192.168.2.1"]
+        MT3["Router N\n..."]
+    end
+
+    Web -->|HTTP/SSE| Router
+    Mobile -->|HTTP/SSE| Router
+    CLI -->|HTTP/SSE| Router
+    
+    Router --> Auth
+    Auth --> Manager
+    
+    Manager --> SessionPool
+    SessionPool -->|Koneksi| MT1
+    SessionPool -->|Koneksi| MT2
+    SessionPool -->|Koneksi| MT3
+    
+    Manager --> Poller
+    Poller -->|Polling Data| MT1
+    Poller -->|Polling Data| MT2
+    Poller -->|Polling Data| MT3
+    
+    Poller --> SSEHub
+    SSEHub -->|Event Real-time| Web
+    SSEHub -->|Event Real-time| Mobile
+```
+
+### Connection Multiplexing
+
+Beberapa `router_id` dapat berbagi koneksi yang sama ketika kredensial cocok:
+
+```mermaid
+graph LR
+    subgraph RouterIDs["Router IDs"]
+        R1["router-01"]
+        R2["router-02"]
+        R3["router-03"]
+        R4["router-04"]
+    end
+
+    subgraph Sessions["Session Pool"]
+        SK1["Session Key A\n192.168.1.1\|admin\|pass"]
+        SK2["Session Key B\n192.168.2.1\|admin\|pass"]
+    end
+
+    subgraph Connections["Koneksi Aktif"]
+        C1["Koneksi 1"]
+        C2["Koneksi 2"]
+    end
+
+    R1 -->|key sama| SK1
+    R2 -->|key sama| SK1
+    R3 --> SK2
+    R4 -->|berbeda| SK2
+    
+    SK1 --> C1
+    SK2 --> C2
+```
+
+### Alur Data
+
+```mermaid
+sequenceDiagram
+    participant C as Klien
+    participant API as API Server
+    participant M as Router Manager
+    participant S as Session
+    participant MT as MikroTik
+    participant P as Poller
+    participant SSE as SSE Hub
+
+    C->>API: POST /connect
+    API->>M: ConnectRouter()
+    M->>S: Buat/Ambil Session
+    S->>MT: Establish Koneksi
+    M->>P: Mulai Polling
+    
+    loop Setiap 2 detik
+        P->>MT: /system/resource/print
+        P->>MT: /ip/hotspot/active/print
+        P->>MT: /ppp/active/print
+        MT-->>P: Data
+        P->>SSE: Broadcast
+    end
+    
+    C->>API: GET /sse/{routerID}
+    API->>SSE: Subscribe
+    SSE-->>C: Stream Events
+    
+    C->>API: POST /disconnect
+    API->>M: StopRouter()
+    M->>P: Hentikan Polling
+    M->>SSE: Tutup Klien
+```
 
 ## Konfigurasi
 
@@ -115,6 +238,8 @@ Body (JSON):
 }
 ```
 
+Contoh (cURL):
+
 ```bash
 curl -X POST 'http://localhost:8080/disconnect' \
 -H 'X-API-Key: kunci-rahasia-anda-yang-sangat-aman' \
@@ -193,10 +318,38 @@ MIT License - lihat [LICENSE](LICENSE) untuk detail.
 
 ## Development
 
+### Setup
+
+Install pre-commit hooks untuk kualitas kode:
+
+```bash
+make setup      # Install pre-commit hooks
+```
+
+### Perintah yang Tersedia
+
 ```bash
 make swag       # Generate swagger docs
 make swag-fmt   # Format swagger annotations
 make build      # Build binary
 make test       # Run tests
 make run        # Run server locally
+make lint       # Run linters (gofmt, go vet, golint)
+make fmt        # Format kode Go
+make clean      # Hapus build artifacts
+```
+
+### Pre-commit Hooks
+
+Proyek ini menggunakan [pre-commit](https://pre-commit.com/) untuk memastikan kualitas kode:
+
+- **Go**: `gofmt`, `go vet`, `goimports`, `golint`
+- **Files**: Trailing whitespace, EOF fixer, validasi YAML/JSON
+- **Security**: Deteksi private key, pengecekan file besar
+- **Markdown**: Prettier formatting
+
+Hooks berjalan otomatis setiap commit. Untuk menjalankan manual:
+
+```bash
+pre-commit run --all-files
 ```
