@@ -1,5 +1,6 @@
 /*
 !cmd/
+!docs/
 !internal/
 !go.mod
 !go.sum
