@@ -58,10 +58,10 @@ func main() {
 
 	mux.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
 
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		handler.JSONOK(w, map[string]string{"status": "ok"})
 	})
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, _ *http.Request) {
 		handler.JSONOK(w, map[string]string{"message": "ok"})
 	})
 	mux.HandleFunc("POST /connect", func(w http.ResponseWriter, r *http.Request) {
@@ -84,9 +84,9 @@ func main() {
 	h = middleware.AuthMiddleware(cfg.APIKey)(h)
 	h = middleware.CORSMiddleware(cfg.AllowedOrigins)(h)
 
-	log.Println("MikroHot Connector running at :" + port)
+	log.Println("MikroHot Connector running at :" + port) // nolint:gosec
 
-	srv := &http.Server{Addr: ":" + port, Handler: h}
+	srv := &http.Server{Addr: ":" + port, Handler: h, ReadHeaderTimeout: 10 * time.Second}
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

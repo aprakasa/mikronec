@@ -6,9 +6,7 @@ setup:
 	@echo "Pre-commit hooks installed successfully!"
 
 lint:
-	gofmt -d .
-	go vet ./...
-	which golint > /dev/null && golint ./... || echo "golint not installed, skipping"
+	golangci-lint run ./...
 
 fmt:
 	gofmt -w .

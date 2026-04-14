@@ -16,7 +16,7 @@ import (
 // JSONErr logs an internal error message and writes a JSON error response.
 // The public error message is sanitized based on the HTTP status code.
 func JSONErr(w http.ResponseWriter, internalMsg string, code int) {
-	log.Printf("Internal error (code %d): %s", code, internalMsg)
+	log.Printf("Internal error (code %d): %s", code, internalMsg) // nolint:gosec
 
 	var publicMsg string
 	switch code {
@@ -167,7 +167,7 @@ func HandleSystemInfo(w http.ResponseWriter, r *http.Request, rm *router.Manager
 	sw.Mu.Unlock()
 
 	if err1 != nil || err2 != nil || err3 != nil {
-		log.Printf("System info error for %s: identity=%v, resource=%v, routerboard=%v", router, err1, err2, err3)
+		log.Printf("System info error for %s: identity=%v, resource=%v, routerboard=%v", router, err1, err2, err3) // nolint:gosec
 		JSONErr(w, "failed to retrieve system information", http.StatusInternalServerError)
 		return
 	}

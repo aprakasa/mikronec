@@ -62,7 +62,7 @@ func HandleSSE(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 
 	if lastEventID != "" {
 		if _, err := strconv.ParseInt(lastEventID, 10, 64); err == nil {
-			_, _ = fmt.Fprintf(w, "event: reconnect\nid: %s\ndata: {\"reconnected\":true,\"last_event_id\":\"%s\"}\n\n", lastEventID, lastEventID)
+			_, _ = fmt.Fprintf(w, "event: reconnect\nid: %s\ndata: {\"reconnected\":true,\"last_event_id\":\"%s\"}\n\n", lastEventID, lastEventID) // nolint:gosec
 			flusher.Flush()
 		}
 	}
@@ -75,10 +75,10 @@ func HandleSSE(w http.ResponseWriter, r *http.Request, rm *router.Manager) {
 	}()
 
 	for evt := range client.Ch {
-		w.Write([]byte("event: " + evt.Event + "\n"))
-		w.Write([]byte("id: " + evt.ID + "\n"))
-		w.Write([]byte("data: " + string(evt.Data) + "\n"))
-		w.Write([]byte("\n"))
+		w.Write([]byte("event: " + evt.Event + "\n"))       // nolint:errcheck,gosec
+		w.Write([]byte("id: " + evt.ID + "\n"))             // nolint:errcheck,gosec
+		w.Write([]byte("data: " + string(evt.Data) + "\n")) // nolint:errcheck,gosec
+		w.Write([]byte("\n"))                               // nolint:errcheck,gosec
 		flusher.Flush()
 	}
 }

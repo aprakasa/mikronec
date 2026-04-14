@@ -1,5 +1,17 @@
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      minor-patch:
+        patterns:
+          - "golangci-lint-action"
+          - "actions/checkout"
+          - "actions/setup-go"
+
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
