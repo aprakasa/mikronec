@@ -1,16 +1,10 @@
-.PHONY: swag swag-fmt build test run clean setup lint fmt
-
-setup:
-	@which pre-commit > /dev/null || pip install pre-commit
-	pre-commit install
-	@echo "Pre-commit hooks installed successfully!"
+.PHONY: swag swag-fmt build test run clean lint fmt
 
 lint:
 	golangci-lint run ./...
 
 fmt:
 	gofmt -w .
-	goimports -w .
 
 swag:
 	swag init -g cmd/server/main.go -o ./docs --parseDependency --parseInternal
